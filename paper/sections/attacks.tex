@@ -1,0 +1,73 @@
+In this section, common attacks on low-cost routers are discussed. This includes how the different types of attacks work, how attackers abuse these attacks and a method to map these attacks.
+
+To do this, the different types of attacks that can be performed against low cost routers will to be studied including the likelihood of these attacks happening. The attacks have been studied by conducting a literature review on the vulnerabilities in low-cost routers and the different attacks that hackers perform on low-cost routers. An understanding of which attacks on low-cost routers can be mapped and the method to map these attacks is necessary to create an effective honeypot. By having a better understanding of the different attacks and vulnerabilities in low-cost routers, choices could be made on the most effective design of the honeypot for capturing the different types of attacks.
+
+\subsection{DNS Redirection}
+A common target for attacks is the Domain Name System. Hackers could target the DNS cache in low-cost routers by updating the DNS server or DNS table. For example hackers might want to redirect traffic from a regular website to a phishing website by exploiting the router and updating the DNS server in order to redirect the requests to the phishing website.
+
+This attack could be performed by abusing vulnerabilities in the implementation of the software of the router. Some other examples of these attacks can be done by sending malformed packets, injecting malicious code or by exploiting buffer overflows \cite{DNSATTACK:NETSEC:2014}.
+
+Routers from D-Link were found to be vulnerable to this type of attack. Hackers succeeded in updating the DNS server on these routers by sending forged requests to these routers \cite{DLINK:DNSHIJACK:2019}. The request used to perform to target these D-Link routers, captured by researchers with a honeypot, can be seen below:
+
+\begin{verbatim}
+    /form2dns.cgi?dnsmode=1&dns=195.128.126.165
+    &dns2=195.128.124.131&dns3=&submit.htm
+    ?dns.htm=send&save=apply
+\end{verbatim}
+
+\subsection{Brute-force}
+Brute-force attacks are a common way of trying to break into systems. These attacks are usually not targeted and hackers try to use common username password combinations to enter the systems. A common  type brute-force attacks are dictionary attacks, which are done by trying default username and passwords or combinations of common words. An example of a list for a dictionary can be found here: \cite{GITHUB:SECLISTS}. This type of attacks is common and usually not limited to low-cost routers. Multiple researchers have performed research on this type of attacks. J. P. Owens, for example, did an extensive study on the passwords and methods used in brute-force attacks \cite{BRUTEFORCE:CLARCKSON:2008}. For this reason brute-force attacks remain outside the scope of this research.
+
+\subsection{Denial-of-Service}
+Denial-of-Service (DoS) attacks are a common type of attack on the internet. The Denial-of-Service attack is used to deny the host access to the internet. The most common type of Denial-of-Service attack is the Distributed Denial-of-Service (DDoS) attack, where multiple attackers flood the host device with packets to render its connection to the network unavailable.
+
+Other Denial-of-Service attacks could abuse vulnerabilities in devices to overload the system or possibly even reboot the device. An example is CVE-2017-7285 \cite{CVE-2017-7285:CXSECURIITY:2017} in MikroTik routers, where a flood of reset (RST) packets can overload the CPU of the router, rendering the device unable to initiate new TCP connections. The type of attack differs depending on the exploited vulnerability, making it difficult to discover these attacks. For this reason, long periods without any received traffic after suspicious packets are received could be a possible indicator of these attacks.
+
+\subsection{Code injection}
+Another common attack is for hackers to use low-cost routers to inject malicious code in requests passing through the router. A real-life example is a hacker targeting low-cost routers with the intent of injecting cryptocurrency mining code into websites \cite{MikroTikCryptoHack:PCMAG:2018}. Detecting code injection could pose a challenge as the methods used by attacker may differ. CVE-2018-14847 \cite{CVE-2018-14847:TENABLE:2018} and CVE-2018-7445 \cite{CVE-2018-7445:CORESEC:2018} are vulnerabilities that can be exploited to launch a code injection attack.
+
+\subsection{IoT Malware}
+Internet of Things (IoT) devices are a common target for attackers to create large botnets. This is done by attempting to brute-force the credentials, with the intent of installing malware. According to research by the security company Symantec, most botnets are utilized for launching Denial-of-Service attacks \cite{IOTMALWARE:SYMANTEC:2016}.
+
+An example of such a malware, Mirai, is primarily composed of embedded and IoT devices. The Mirai botnet was composed of more than 600k devices at its peak in 2016 and these infected devices were used to launch DDoS attacks. Mirai infected devices are scanning the internet space for SSH and Telnet services. Brute-force attacks are then attempted on this services. Once the attacker successfully signed in, it will trigger a report server reporting the IP address and the discovered credentials. The report server then triggers another server to load the Mirai malware on the device \cite{UNDERSTANDINGMIRAI:USENIX:2017}. 
+
+All traffic related to the Mirai malware can be detected with the following TCPDUMP signature in the Berkeley Packet Filter (BPF) syntax: \cite{IMPROVINGIOTBOTNET:SENSORS:2018}:
+\begin{verbatim}
+    `tcp[4:4] == ip[16:4]'
+\end{verbatim}
+
+\section{Vulnerabilities in RouterOS}
+In recent years, many critical vulnerabilities for RouterOS have been published  \cite{CVELIST}. This subsection aims to investigate some of these recent vulnerabilities. Not all RouterOS vulnerabilities are being explored in this research, but only the vulnerabilities with a critical score on the CVSSv2 scale. This scale is the industry standard for classifying the severity of vulnerabilities on a scale of 1 to 10. The vulnerabilities discussed in this section have been recreated on a local RouterOS system to discover how attacks exploiting these vulnerabilities can be discovered.
+
+CVE-2018-7445 is a vulnerability with the maximum score of 10 following the CVSSv2 scale. This vulnerability involves a bug in the Server Message Block (SMB) service of RouterOS, which can be used to create a stack overflow. The overflow happens before authentication takes place causing an unauthenticated hacker to be able to execute malicious code. According to Core Security, the exploit takes place in a function parsing NetBIOS names, which receives two stack allocated buffers. The buffers are copied over to the destination buffer without any size validation on the original buffer. A stack overflow will happen when the original buffers are larger than the destination buffer providing attackers with the ability to execute custom code and a root shell \cite{CVE-2018-7445:CORESEC:2018}. We discovered by using the proof of concept vulnerability published by Core Security that an attack on this vulnerability is recognizable by multiple large packets on the SMB service containing the same bytes with only the last bytes of the last packet being different. The vulnerability has been patched by MikroTik in RouterOS 6.41.3/6.42rc27 \cite{CVE-2018-7445:CORESEC:2018}.
+
+CVE-2018-1156 is a vulnerability in the license upgrade system of MikroTik routers and can be used to trigger a buffer overflow on the router. A sprintf call in the licupgr binary in RouterOS can be used by a remotely authenticated attacker to trigger the buffer overflow and allow the attacker to remotely execute code. The following request can be used to trigger this buffer overflow \cite{CVE2018-1156:Tenable:2018}:
+\begin{verbatim}
+    GET /ssl_conn.php?usrname=%s&passwd=%s&softid
+    =%s&level=%d&pay_type=%d&board=%d HTTP/1.0
+\end{verbatim}
+
+CVE-2018-14847 was originally published as a low priority bug where an attacker could gain read only access to all files on the router. The bug is a directory traversal error in WinBox, an application from MikroTik to remotely access the routers' management interface. A researcher from Tenable Research discovered that there was more to this vulnerability than expected as the vulnerability could also be used to write files on the file-system via WinBox without requiring authentication. This discovery increased the CVSSv2 score from a 5 to the critical score of 10. Tenable estimates that at least 70\% of the vulnerable devices, will remain vulnerable \cite{CVE-2018-14847:TENABLE:2018}. This vulnerability can be recognized by the following payloads \cite{CVE-2018-14847:TENABLE:2018}:
+
+\begin{verbatim}
+    {bff0005:1, uff0006:5, uff0007:7, s1: 
+    `/////./..//////./..//////./../
+    flash/rw/store/user.dat', 
+    Uff0002:[0,8], Uff0001:[2,2]}
+\end{verbatim}
+
+and the second payload (as a hex dump):
+
+\begin{verbatim}
+    37 01 00 35 4d 32 01 00 ff 88 02 00 00 00
+    00 50 00 00 08 00 00 00 02 00 ff 88 02 00
+    02 00 00 00 00 60 02 00 00 00 01 00 fe 09 
+    01 03 00 ff 09 02 02 00 00 70 00 08 2e 01 
+    00 00 06 00 ff 09 05
+\end{verbatim}
+
+The third section of the first payload contains command 7. Tenable discovered that the vulnerability is shared with command 1 and 3, where command 1 allows an attacker to open and write a file at any location by replacing the path in the payload. Tenable used this vulnerability to retrieve the administrator credentials from the user database and to create a file in `flash/nova/devel-login' enabling a user account with root capabilities \cite{CVE-2018-14847:TENABLE:2018}.
+
+CVE-2019-3934 is a vulnerability similar to CVE-2018-14847. This is another directory traversal vulnerability in the WinBox software, which allows the hacker read and write access to all files on the router. The main difference with CVE-2018-14847 is that this vulnerability requires authentication before invocation \cite{CVE-2019-3943:TENABLE:2019}. The payloads are similar to the payloads shown above as both vulnerabilities are a directory traversal vulnerability.
+
+Another vulnerability in RouterOS is CVE-2017-7285. This vulnerability can be found in the network stack of RouterOS. This is a vulnerability which can be used as a Denial of Service attack, where an unauthenticated hacker could exhaust all available CPU by sending a flood of RST packets preventing the router from accepting new TCP connections. The vulnerability was discovered for RouterOS version 6.38.5 and an example exploit is published by CX Security \cite{CVE-2017-7285:CXSECURIITY:2017}. The attack can be recognized by a flood of RST packets after which the router does not receive any traffic for minutes.

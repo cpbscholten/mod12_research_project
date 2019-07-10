@@ -1,0 +1,51 @@
+A good design is a vital aspect of a successful honeypot. The honeypot has to look convincing in order to capture traffic to discover the attacks performed on the system. This section will focus on the design of the honeypot router and discuss how the honeypot router was implemented in a cloud environment. Some legal considerations in the design of the honeypot are also mentioned. 
+
+The honeypot will be set up to appear exactly as a regular router and will capture all requests and user interactions with the system. To appear as a convincing MikroTik router it needs to be created such that the device appears as a real MikroTik device with similar available services and port setup. A visible Apache server, for example, could be an indicator to hackers that the honeypot is not a real routing device and could make this research less effective. Therefore, a proper design of the honeypot is vital for the success of this research. 
+
+\subsection{Services in RouterOS}
+Firstly, the available services on a honeypot router need to be mapped and the ports that each service uses. To do this, a MikroTik Cloud Hosted Router (CHR)\footnote{Images for the CHR can be found here: \url{https://mikrotik.com/download}} was run in a cloud environment and the network mapping tool Nmap was used to discover the default services running on the router. These services can be seen in Table \ref{table:miktorik_defailt_ports}.
+\begin{table}[h]
+\centering 
+\begin{tabular}{ |r|l| } 
+\hline
+Port & Service \\ \hline
+21 & FTP \\ \hline
+22 & SSH \\ \hline
+23 & Telnet \\ \hline
+80 & HTTP \\ \hline
+139 & SMB (Disabled by default) \\ \hline
+2000 & Mikrotik-bandwidth-test-server \\ \hline
+8291 & WinBox \\ \hline
+8728 & API (Disabled by default) \\ \hline
+8729 & API-SSL (Disabled by default) \\ \hline
+\end{tabular}
+\caption{Default services of MikroTik RouterOS}
+\label{table:miktorik_defailt_ports}
+\end{table}
+
+\subsection{Legal considerations}
+Legal obligations are an important factor to consider in the design of the honeypot. According to EU law, `a duty to act positively to protect others from damage may exist if the actor creates or controls a dangerous situation' \cite{EUTORTLAW:SPRINGER:2007}.
+This law gives honeypot owners a responsibility to take proper actions to protect the honeypot, because a honeypot can be seen as a potentially dangerous situation by attracting real world attacks.
+
+According to research, a secure honeypot meeting the requirements laid down by EU law consists of the five parts mentioned below \cite{HONEYPOTSLIABILITY:SPRINGER:2015}, which have been used as a guideline for the design of the honeypot for this research:
+\begin{itemize}
+    \setlength\itemsep{0em}
+    \item Firewall. Only allow connections to restricted ports.
+    \item Dynamic connection redirection mechanism. Only trusted connections can have access outside the honeypot.
+    \item Emulated private virtual network. The honeypot should be run in a restricted private network to restrict attackers.
+    \item Testbed. The controlled environment to analyze vulnerabilities in applications.
+    \item Control center. The administrator of the honeypot should monitor connections and quickly respond to incidents.
+\end{itemize}
+
+\subsection{Honeypot design}
+The main way to discover attacks on the router is to capture all traffic to the router. The traffic monitoring tool TCPDUMP has been used to capture all traffic to the router and has been stored to a file format compatible with Wireshark.
+
+Live diagnostics using the API from RouterOS as discussed by M. I. Mazdadi et al. \cite{ROUTEROSFORENSICS:IJCSIS:2017} is a useful tool to actively retrieve data and to discover irregular activity on RouterOS enabled systems. The tool developed in this paper was not available, so a custom script was written to imitate this functionality\footnote{This script can be found here: \url{https://github.com/cpbscholten/routeros-api-snooper/}}. The script can retrieve logs, users, DHCP leases, the ARP table, BGP data and all the files on the router. This API snooper script exports all extracted information to an excel sheet tagged with the date and time of retrieval.
+
+The honeypot was run on a server from Microsoft Azure in Brazil, because previous attacks were discovered targeting Brazilian MikroTik users \cite{MikroTikCryptoHack:PCMAG:2018}. A host-only network was created on the server of the honeypot to separate the traffic to the server and the honeypot and to ensure that the honeypot will not be able to gain access to rest of the server. The testbed running RouterOS 6.39.3 was installed on a virtual machine on the host-only network. RouterOS version 6.39.3 was chosen because this version has not been patched for most of the critical vulnerabilities from recent years. The API service on port 8729 was enabled on the honeypot, and a special user for the API was created to distinguish attacks on the router from the API. The SMB service on port 139 has been enabled as well, so that hackers are able to exploit CVE-2018-7445 \cite{CVE-2018-7445:CORESEC:2018}. The default password has been changed to a strong auto generated password to limit the chance for successful brute-force attacks, because attacks targeted at low-cost routers are preferred over general untargeted attacks.
+
+On the Azure server, the ports to all MikroTik services were forwarded to the virtual machine on the server, such that it appears exactly as a regular router. The port to the API-SSL is not forwarded, since this port is only used by the API Snooper script and is not enabled by default on regular MikroTik routers. The server uses CRON jobs to schedule the data retrieval from the RouterOS API every 5 minutes and TCPDUMP captures on the exposed ports are scheduled every 10 minutes and written to a Wireshark compatible .pcap file tagged with date and time.
+
+A difference with a regular MikroTik router and the honeypot is that port 2222 on the honeypot router exists to get access to the SSH terminal of the Microsoft Azure server. This port has only been opened when access to the server was required and access to this port was limited to a small range of IP addresses. At all other times this port has been disabled in the Azure Control Panel to ensure that the honeypot appears exactly like a regular MikroTik router.
+
+For the honeypot a high interaction honeypot was chosen. This has the advantage that the chances of receiving and detecting attacks is larger than with low interaction honeypots. The disadvantage is that more damage could be done to the device and therefore proper security measures should be taken to make sure that the router can be reset easily and that the bandwidth is limited to significantly limit the damages attackers could do. For this reason, rate limiting has been used to limit all traffic to the testbed to 1mbps and backups are regularly made to reset the honeypot when the router gets compromised. As system administrators we regularly monitored the connections on the honeypot to detect irregularities and to respond to incidents. 

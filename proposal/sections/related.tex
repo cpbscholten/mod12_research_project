@@ -1,0 +1,23 @@
+This section elaborates on related work to this research, after which the impact of this research is discussed.
+
+M. Niemietz and J. Schwenk \cite{ROUTERSEC:RUB:2015} evaluated routers from ten different manufacturers and shows how all of these are vulnerable for XSS attacks, UI redressing and fingerprinting attacks. The researchers were able to circumvent the security of all of the investigated routers. It discusses how these vulnerabilities can be exploited and provides countermeasures to make home routers more secure.
+ 
+One of the protocols vulnerable for attacks is the BGP protocol. In the memo of S. Murphy \cite{BGPHIJACKING:INTSOC:2006} the vulnerabilities in the BGP protocol are analyzed. The memo discusses how the BGP protocol on routers can be used to delete, forge, or reply data with the potential to disrupt network routing.
+
+Honeypots have been a common tool used by researchers to detect hacker attacks and the conference proceeding "Honeypot router device for router protocols protection \cite{HONEYPOT:IEETR:2009}" uses a honeypot to capture hacker attacks on routers. The honeypot was used to capture a real RIP attack. The proceeding offers a great insight in how a honeypot router can be created and used to capture real hacker attacks. 
+
+A similar conference from 2006 had a  proceeding about dynamic honeypots by C. Hecker, K. L. Nance and B. Hay \cite{HONEYPOT:MARY:2006}. This proceeding argues for the use of a dynamic honeypot instead of a static or low/high interaction honeypots and explains the ways to set up a dynamic honeypot router with honeyd.
+
+While no research has been done on using RouterOS as a honeypot device, some research has been done on monitoring attacks on MikroTik RouterOS. The article "Live Forensics on RouterOS using API Services to Investigate Network Attacks \cite{ROUTEROSFORENSICS:IJCSIS:2017}" discusses using live forensics on RouterOS as a technique to capture hacker attacks. The article specifically mentions that only internal attacks were researched and research should be done on using live forensics to discover hacker attacks from external networks. This research was fairly limited and only included a proof of concept attack and did not involve any monitoring and characterization of real hacker attacks.
+
+\subsection{Impact}
+This research adds substantial information to the fields of analyzing attacks on low cost routers. A lot of research is available on the different types of vulnerabilities, with some research available about the subject of honeypots. All in all, very little research is available regarding the characteristics of real hacker attacks. The only research discussing attacks on MikroTik routers \cite{ROUTEROSFORENSICS:IJCSIS:2017} only captured a proof of concept attack and only focused on attacks from the internal network. Characterizing the real attacks against routers will provide a better insight in the intents of hackers and can be used to provide new defend mechanisms against attacks on low cost routers.
+
+\subsection{Research aims}
+In this research the following research questions will be answered. The research questions are ordered in such a way that the that all previous questions need to be answered before the next question can be answered.
+
+\textbf{RQ1} What are the different types of attacks low cost routers are vulnerable to.\\
+\textbf{RQ2} Which attacks on low cost routers can be mapped and what methodology could be used to map each type of attack?\\
+\textbf{RQ3} How can attacks on low cost routers be characterized by analyzing real hacker attacks on a honeypot router?
+
+
